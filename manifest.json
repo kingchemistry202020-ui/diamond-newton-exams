@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "Newton Diamond Exams",
   "short_name": "Newton",
   "description": "منصة نيوتن دايموند للامتحانات والواجبات",
@@ -10,6 +10,12 @@
   "theme_color": "#0f3460",
   "direction": "rtl",
   "lang": "ar",
- "icons": [
-  { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-]
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
