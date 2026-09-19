@@ -1,14 +1,28 @@
 ﻿const CACHE = 'nd-cache-v1';
-self.addEventListener('install', e => { self.skipWaiting(); });
-self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
-self.addEventListener('fetch', e => {
+
+self.addEventListener('install', function(e) {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function(e) {
+  e.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', function(e) {
   if (e.request.method !== 'GET') return;
+  
   e.respondWith(
-    caches.open(CACHE).then(c =>
-      fetch(e.request).then(res => {
-        if (res.ok && e.request.url.indexOf(self.location.origin) === 0) c.put(e.request, res.clone());
-        return res;
-      }).catch(() => c.match(e.request).then(m => m || caches.match('./index.html')))
-    )
+    caches.open(CACHE).then(function(cache) {
+      return fetch(e.request).then(function(response) {
+        if (response && response.status === 200 && response.type === 'basic') {
+          cache.put(e.request, response.clone());
+        }
+        return response;
+      }).catch(function() {
+        return cache.match(e.request).then(function(match) {
+          return match || cache.match('./index.html');
+        });
+      });
+    })
   );
 });

@@ -3,11 +3,16 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Newton">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Newton Diamond Exams</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f3460">
 <link rel="icon" href="icon.png" type="image/png">
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon.png">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <style>
@@ -207,7 +212,7 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
     <div id="loginError" style="color:#dc3545;margin:8px 0;display:none"></div>
     <button class="btn" id="loginBtn" onclick="doLogin()" style="display:none">دخول</button>
     <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(120,130,200,.25);font-size:11px;color:#666">
-      👨‍🏫 المعلم: بالكود السري من صفحتك الشخصية<br/>👨🎓 الطالب: بالكود من معلمك
+      👨🏫 المعلم: بالكود السري من صفحتك الشخصية<br/>👨🎓 الطالب: بالكود من معلمك
     </div>
   </div>
 </div>
@@ -220,7 +225,7 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
       <button class="btn btn-secondary" onclick="showProfile()">👤</button>
       <button class="btn btn-secondary theme-gear" onclick="toggleThemeDrop('themeDropT')">⚙️</button>
       <button class="btn btn-info" onclick="exportBackup()">💾 نسخة</button>
-      <button class="btn btn-secondary" onclick="logout()"> خروج</button>
+      <button class="btn btn-secondary" onclick="logout()">🚪 خروج</button>
     </div>
   </div>
   <div class="tabs">
@@ -233,13 +238,13 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
   <div id="tHome" class="tab-content active">
     <h2>🏠 نظرة سريعة</h2>
     <div id="homeStats"></div>
-    <h3> اختصارات سريعة</h3>
+    <h3>⚡ اختصارات سريعة</h3>
     <div class="actions">
       <button class="btn btn-success" onclick="go('tExams','sbNew')">➕ امتحان جديد</button>
       <button class="btn btn-primary" onclick="go('tExams','sbManage')">📚 إدارة الامتحانات</button>
       <button class="btn btn-info" onclick="go('tStudents','sbStu')">🎓 إضافة طالب</button>
       <button class="btn btn-info" onclick="go('tStudents','sbBulk')">➕ إضافة بالجملة</button>
-      <button class="btn btn-warning" onclick="go('tRequests',null)"> طلبات الطلاب</button>
+      <button class="btn btn-warning" onclick="go('tRequests',null)">🔓 طلبات الطلاب</button>
     </div>
   </div>
   <div id="tExams" class="tab-content">
@@ -254,6 +259,16 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
       <div class="form-group"><label>الصف</label><select id="grade"><option value="prep1">الأول الإعدادي</option><option value="prep2">الثاني الإعدادي</option><option value="prep3">الثالث الإعدادي</option><option value="sec1">الأول الثانوي</option><option value="sec2">الثاني الثانوي</option><option value="sec3">الثالث الثانوي</option></select></div>
       <div class="form-group"><label>العنوان</label><input type="text" id="examTitle" placeholder="عنوان الامتحان"/></div>
       <div class="form-group"><label>المدة بالدقائق (0 = بدون)</label><input type="number" id="examDuration" value="0" min="0"/></div>
+      <div class="form-group"><label>🎯 الاستهداف</label>
+        <select id="targetType" onchange="updateTargetUI()">
+          <option value="all">🌍 جميع الطلاب</option>
+          <option value="grade">🎯 كل طلاب الصف</option>
+          <option value="group">👥 مجموعة محددة</option>
+          <option value="students">🎯 طلاب محددون</option>
+        </select>
+      </div>
+      <div id="targetGroupWrap" style="display:none" class="form-group"><label>اختر المجموعة</label><select id="targetGroup"></select></div>
+      <div id="targetStudentsWrap" style="display:none" class="form-group"><label>اختر الطلاب</label><div id="targetStudentsList" style="background:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.9);border-radius:14px;max-height:180px;overflow-y:auto"></div></div>
       <div class="json-import-box">
         <h3>🤖 استيراد أسئلة JSON</h3>
         <textarea id="jsonInput" class="json-textarea" placeholder='{"questions":[{"question":"...","options":["أ","ب","ج","د"],"correctAnswer":0,"level":"سهل","explain":"..."}]}'></textarea>
@@ -281,7 +296,7 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
       <button class="subtab" id="sbGrp" onclick="switchSub('subGrp',this)">👥 المجموعات (<span id="groupCount">0</span>)</button>
     </div>
     <div id="subStu" class="sub-content active">
-      <div id="editStuHint" style="display:none" class="card"><div class="card-title">️ تعديل طالب</div><div class="card-meta" id="editStuHintTxt"></div><div class="card-actions"><button class="btn btn-secondary" onclick="cancelStudentEdit()">✖ إلغاء</button></div></div>
+      <div id="editStuHint" style="display:none" class="card"><div class="card-title">✏️ تعديل طالب</div><div class="card-meta" id="editStuHintTxt"></div><div class="card-actions"><button class="btn btn-secondary" onclick="cancelStudentEdit()">✖ إلغاء</button></div></div>
       <div class="card">
         <div class="card-title">➕ إضافة / تعديل طالب</div>
         <div class="form-group"><label>اسم الطالب</label><input type="text" id="stName" placeholder="الاسم الكامل"/></div>
@@ -304,11 +319,11 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
       </div>
     </div>
     <div id="subGrp" class="sub-content">
-      <div id="editGrpHint" style="display:none" class="card"><div class="card-title">✏️ تعديل مجموعة</div><div class="card-meta" id="editGrpHintTxt"></div><div class="card-actions"><button class="btn btn-secondary" onclick="cancelGroupEdit()">✖ إلغاء</button></div></div>
+      <div id="editGrpHint" style="display:none" class="card"><div class="card-title">✏️ تعديل مجموعة</div><div class="card-meta" id="editGrpHintTxt"></div><div class="card-actions"><button class="btn btn-secondary" onclick="cancelGroupEdit()"> إلغاء</button></div></div>
       <div class="card">
         <div class="card-title">➕ إضافة / تعديل مجموعة</div>
         <div class="form-group"><label>اسم المجموعة</label><input type="text" id="newGroupName" placeholder="مثال: مجموعة أ"/></div>
-        <div class="form-group"><label>👥 ضم طلاب</label><div id="groupMembersList" style="background:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.9);border-radius:14px;max-height:200px;overflow-y:auto"></div></div>
+        <div class="form-group"><label> ضم طلاب</label><div id="groupMembersList" style="background:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.9);border-radius:14px;max-height:200px;overflow-y:auto"></div></div>
         <button class="btn btn-primary" onclick="addGroup()">💾 حفظ</button>
       </div>
       <div id="groupsList"></div>
@@ -328,10 +343,10 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
 <div id="studentScreen" class="screen">
   <div class="welcome-banner" id="welcomeBanner"></div>
   <div class="header">
-    <div style="display:flex;align-items:center;gap:8px"><img class="hdr-avatar" id="hdrAvatarS" style="display:none" alt=""/>‍🎓 <span id="studentNameDisplay"></span></div>
+    <div style="display:flex;align-items:center;gap:8px"><img class="hdr-avatar" id="hdrAvatarS" style="display:none" alt=""/>👨‍🎓 <span id="studentNameDisplay"></span></div>
     <div class="actions-row">
-      <span class="counter" id="cloudBadgeS">⚪ محلي</span>
-      <button class="btn btn-secondary" onclick="showProfile()">👤</button>
+      <span class="counter" id="cloudBadgeS"> محلي</span>
+      <button class="btn btn-secondary" onclick="showProfile()"></button>
       <button class="btn btn-secondary theme-gear" onclick="toggleThemeDrop('themeDropS')">⚙️</button>
       <button class="btn btn-secondary" onclick="logout()">🚪 خروج</button>
     </div>
@@ -340,7 +355,7 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
   <div id="stuStats"></div>
   <div class="tabs">
     <button class="tab active" onclick="switchTab('sExams',this)">📚 الامتحانات</button>
-    <button class="tab" onclick="switchTab('sResults',this)">📊 نتائجي</button>
+    <button class="tab" onclick="switchTab('sResults',this)"> نتائجي</button>
   </div>
   <div id="sExams" class="tab-content"><div id="studentExamsList"></div></div>
   <div id="sResults" class="tab-content"><h2>📊 نتائجي</h2><div id="studentResultsList"></div></div>
@@ -377,7 +392,7 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
   <div style="text-align:center;margin:10px 0">
     <div id="profileAvatarWrap"></div>
     <div class="actions-row" style="justify-content:center;margin-top:12px">
-      <label class="btn btn-info" style="width:auto;padding:10px 16px;cursor:pointer">📷 تغيير الصورة<input type="file" accept="image/*" style="display:none" onchange="uploadAvatar(this)"/></label>
+      <label class="btn btn-info" style="width:auto;padding:10px 16px;cursor:pointer"> تغيير الصورة<input type="file" accept="image/*" style="display:none" onchange="uploadAvatar(this)"/></label>
       <button class="btn btn-danger" style="width:auto;padding:10px 16px" onclick="removeAvatar()">🗑️ حذف</button>
     </div>
     <div class="card" style="margin-top:16px;text-align:right">
@@ -399,7 +414,7 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
 </div>
 <div class="theme-drop" id="themeDropS">
   <div class="theme-drop-box">
-    <div class="theme-drop-head"> ثيمك الشخصي</div>
+    <div class="theme-drop-head">🎨 ثيمك الشخصي</div>
     <div class="theme-grid" id="themeListS"></div>
   </div>
 </div>
@@ -428,7 +443,7 @@ sup{font-size:.66em;line-height:1;vertical-align:0.55em}
 </div>
 
 <script>
-// ═══════════ ☁️ Firebase ══════════
+// ═══════════ ☁️ Firebase ═════════
 const firebaseConfig = {
   apiKey: "AIzaSyBqCBkRiHT4NiIS_DXRaZaYiugjl1u4zUs",
   authDomain: "magic-notbook.firebaseapp.com",
@@ -444,24 +459,24 @@ const db = firebase.database();
 const el = id => document.getElementById(id);
 const SN = { chemistry:'كيمياء', physics:'فيزياء', science:'علوم', integrated:'علوم متكاملة' };
 const GN = { prep1:'الأول الإعدادي', prep2:'الثاني الإعدادي', prep3:'الثالث الإعدادي', sec1:'الأول الثانوي', sec2:'الثاني الثانوي', sec3:'الثالث الثانوي' };
-const TN = { exam:'📝 امتحان', homework:'📚 واجب' };
+const TN = { exam:' امتحان', homework:'📚 واجب' };
 const KEYS = ['nd_exams','nd_results','nd_students','nd_groups','nd_requests'];
-const SYMS = ['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉','⁺','⁻','²','³','→','⇌','↑','↓','°','±','×','÷','√','π','Δ','∞','≠','≤','≥'];
+const SYMS = ['₀','₁','₂','','₄','₅','₆','₇','₈','₉','','⁻','²','³','→','','↑','↓','°','±','×','÷','√','π','Δ','∞','','≤','≥'];
 const THEMES = [
  {id:'royal', n:'🌌 ملكي', c:['#302b63','#e94560']},
  {id:'ocean', n:'🌊 محيط', c:['#004e92','#00d2ff']},
  {id:'emerald', n:'🌿 زمردي', c:['#203a43','#10b981']},
- {id:'gold', n:'👑 ذهبي', c:['#414345','#d4af37']},
+ {id:'gold', n:' ذهبي', c:['#414345','#d4af37']},
  {id:'rose', n:'🌹 وردي', c:['#2F0743','#ff0844']},
- {id:'neon', n:' نيون', c:['#1a0b2e','#ff00e5']},
+ {id:'neon', n:'💜 نيون', c:['#1a0b2e','#ff00e5']},
  {id:'sunset', n:'🌇 غروب', c:['#4a1503','#ff8008']},
  {id:'forest', n:'🌲 غابة', c:['#14532d','#84cc16']},
- {id:'cherry', n:'🌸 ساكورا', c:['#881337','#fb7185']},
+ {id:'cherry', n:' ساكورا', c:['#881337','#fb7185']},
  {id:'midnight', n:'🌙 منتصف الليل', c:['#1e1b4b','#818cf8']},
  {id:'coffee', n:'☕ بني', c:['#44403c','#b45309']},
  {id:'ice', n:'❄️ جليدي', c:['#0c4a6e','#7dd3fc']}];
 const LV = [{n:'برونزي',e:'🥉',min:0},{n:'فضي',e:'🥈',min:40},{n:'ذهبي',e:'🥇',min:100},{n:'ماسي',e:'♦',min:200}];
-const WELCOME = ['أهلاً بيك يا بطل! 🌟','يا هلا! 🔥','صباح التفوق! 💪','مساء العباقرة! 📚','نورت المنصة! 🚀','يا مرحب بيك! 🏆','أهلاً بك يا نجم! ⭐','هلا هلا! 🧠','وصل البطل! 🎯','نورت يا قمر! '];
+const WELCOME = ['أهلاً بيك يا بطل! 🌟','يا هلا! 🔥','صباح التفوق! 💪','مساء العباقرة! 📚','نورت المنصة! 🚀','يا مرحب بيك! ','أهلاً بك يا نجم! ⭐','هلا هلا! 🧠','وصل البطل! 🎯','نورت يا قمر! '];
 let lastWelc = -1;
 let mem = {}, warned = false;
 let lastReportText = '';
@@ -526,7 +541,7 @@ try {
 } catch(e) { cloudReady = false; }
 
 function updateCloudBadge() {
-  const txt = cloudReady ? '☁️ سحابي' : ' محلي';
+  const txt = cloudReady ? '☁️ سحابي' : '⚪ محلي';
   const bg = cloudReady ? 'linear-gradient(135deg,#059669,#34d399)' : 'linear-gradient(135deg,#4b5563,#9ca3af)';
   ['cloudBadgeT','cloudBadgeS'].forEach(id => { const b = el(id); if (b) { b.textContent = txt; b.style.background = bg; } });
 }
@@ -796,7 +811,7 @@ function requestRetake(examId) {
   const rs = get('nd_requests', []);
   rs.push({ id: Date.now(), type: 'retake', studentCode: currentUser.code, studentName: currentUser.name, examId: examId, examTitle: title, date: new Date().toLocaleString('ar-EG'), status: 'pending', used: false });
   set('nd_requests', rs);
-  toast('🔓 تم الإرسال');
+  toast(' تم الإرسال');
   renderStudent();
 }
 function requestBtnFor(examId) {
@@ -804,7 +819,7 @@ function requestBtnFor(examId) {
   if (pendingRequest(currentUser.code, examId)) return '<button class="btn btn-secondary" disabled>⏳ طلب معلق</button>';
   return '<button class="btn btn-info" onclick="requestRetake(' + examId + ')">🔓 طلب إعادة</button>';
 }
-function answerRequest(id, ok) { const rs = get('nd_requests', []); const q = rs.find(x => x.id === id); if (q) { q.status = ok ? 'approved' : 'rejected'; set('nd_requests', rs); renderRequests(); toast(ok ? '✅ موافقة' : '❌ رفض'); } }
+function answerRequest(id, ok) { const rs = get('nd_requests', []); const q = rs.find(x => x.id === id); if (q) { q.status = ok ? 'approved' : 'rejected'; set('nd_requests', rs); renderRequests(); toast(ok ? '✅ موافقة' : ' رفض'); } }
 function delRequest(id) { set('nd_requests', get('nd_requests', []).filter(q => q.id !== id)); renderRequests(); }
 function renderRequests() {
   const rs = get('nd_requests', []);
@@ -814,7 +829,7 @@ function renderRequests() {
   badge.style.display = pend.length ? 'inline-block' : 'none';
   const done = rs.filter(q => q.status !== 'pending');
   el('requestsList').innerHTML =
-    (pend.length ? pend.map(q => '<div class="card"><div class="card-title">🔓 ' + esc(q.studentName) + ' <span class="code-badge">' + esc(q.studentCode) + '</span></div><div class="card-meta">طلب: إعادة حل "' + esc(q.examTitle) + '"</div><div class="card-meta">📅 ' + q.date + '</div><div class="card-actions"><button class="btn btn-success" onclick="answerRequest(' + q.id + ',true)">✅ موافقة</button><button class="btn btn-danger" onclick="answerRequest(' + q.id + ',false)"> رفض</button></div></div>').join('') : '<div class="empty-state">🔓 لا توجد طلبات</div>') +
+    (pend.length ? pend.map(q => '<div class="card"><div class="card-title">🔓 ' + esc(q.studentName) + ' <span class="code-badge">' + esc(q.studentCode) + '</span></div><div class="card-meta">طلب: إعادة حل "' + esc(q.examTitle) + '"</div><div class="card-meta">📅 ' + q.date + '</div><div class="card-actions"><button class="btn btn-success" onclick="answerRequest(' + q.id + ',true)">✅ موافقة</button><button class="btn btn-danger" onclick="answerRequest(' + q.id + ',false)">❌ رفض</button></div></div>').join('') : '<div class="empty-state">🔓 لا توجد طلبات</div>') +
     (done.length ? '<h3>السجل</h3>' + done.map(q => '<div class="card"><div class="card-title">' + (q.status === 'approved' ? '✅' : '❌') + ' ' + esc(q.studentName) + ' — ' + esc(q.examTitle) + (q.used ? ' (تم)' : '') + '</div><div class="card-actions"><button class="btn btn-danger" onclick="delRequest(' + q.id + ')">🗑️</button></div></div>').join('') : '');
 }
 
@@ -886,7 +901,7 @@ function addStudent() {
     cancelStudentEdit(); renderStudentsTab(); renderGroupsTab(); return;
   }
   if (sts.some(s => s.code === code)) { toast('❌ الكود مستخدم', 1); return; }
-  if (code === teacherProfile().code) { toast(' الكود بتاعك', 1); return; }
+  if (code === teacherProfile().code) { toast('❌ الكود بتاعك', 1); return; }
   sts.push({ id: Date.now(), name: name, subject: subject, grade: grade, groupId: groupId, code: code }); set('nd_students', sts);
   el('stName').value = ''; el('stCode').value = '';
   renderStudentsTab(); renderGroupsTab(); toast('✅ تم إضافة ' + name);
@@ -901,7 +916,7 @@ function startEditStudent(id) {
   go('tStudents','sbStu');
 }
 function cancelStudentEdit() { editingStudentId = null; el('editStuHint').style.display = 'none'; el('stName').value = ''; el('stCode').value = ''; }
-function delStudent(id) { ask('حذف الطالب؟', () => { set('nd_students', get('nd_students', []).filter(s => s.id !== id)); renderStudentsTab(); renderGroupsTab(); toast('️ تم'); }); }
+function delStudent(id) { ask('حذف الطالب؟', () => { set('nd_students', get('nd_students', []).filter(s => s.id !== id)); renderStudentsTab(); renderGroupsTab(); toast('🗑️ تم'); }); }
 function addBulk() {
   const lines = el('bulkText').value.split('\n').map(l => l.trim()).filter(Boolean);
   if (!lines.length) { toast('❌ الصق القائمة', 1); return; }
@@ -933,7 +948,7 @@ function renderStudentsTab() {
     const pts = studentPoints(s.code);
     const li = levelInfo(pts);
     const av = get(avatarKeyFor('student', s.id), null);
-    return '<div class="card"><div class="card-title">' + (av ? '<img class="mini-avatar" src="' + av + '"/>' : '') + '  ' + esc(s.name) + ' <span class="code-badge">' + esc(s.code) + '</span> ' + li.cur.e + '</div><div class="card-meta">📚 ' + (SN[s.subject] || s.subject) + ' |  ' + (GN[s.grade] || '—') + ' | 👥 ' + groupName(s.groupId) + ' | 🏅 ' + pts + ' نقطة</div><div class="card-actions"><button class="btn btn-info" onclick="openReport(' + s.id + ')">📋 تقرير</button><button class="btn btn-warning" onclick="startEditStudent(' + s.id + ')">✏️ تعديل</button><button class="btn btn-danger" onclick="delStudent(' + s.id + ')">🗑️ حذف</button></div></div>';
+    return '<div class="card"><div class="card-title">' + (av ? '<img class="mini-avatar" src="' + av + '"/>' : '') + ' 🎓 ' + esc(s.name) + ' <span class="code-badge">' + esc(s.code) + '</span> ' + li.cur.e + '</div><div class="card-meta"> ' + (SN[s.subject] || s.subject) + ' | 🎓 ' + (GN[s.grade] || '—') + ' | 👥 ' + groupName(s.groupId) + ' | 🏅 ' + pts + ' نقطة</div><div class="card-actions"><button class="btn btn-info" onclick="openReport(' + s.id + ')">📋 تقرير</button><button class="btn btn-warning" onclick="startEditStudent(' + s.id + ')">️ تعديل</button><button class="btn btn-danger" onclick="delStudent(' + s.id + ')">🗑️ حذف</button></div></div>';
   }).join('') : '<div class="empty-state">🎓 لا يوجد طلاب</div>';
   populateGroupSelects();
   renderGroupMembers();
@@ -943,6 +958,17 @@ function populateGroupSelects() {
   const opts = '<option value="">— بدون مجموعة —</option>' + gs.map(g => '<option value="' + g.id + '">' + esc(g.name) + '</option>').join('');
   el('stGroup').innerHTML = opts;
   el('bulkGroup').innerHTML = opts;
+  el('targetGroup').innerHTML = gs.length ? gs.map(g => '<option value="' + g.id + '">' + esc(g.name) + '</option>').join('') : '<option value="">— لا توجد مجموعات —</option>';
+}
+function updateTargetUI() {
+  const t = el('targetType').value;
+  el('targetGroupWrap').style.display = t === 'group' ? 'block' : 'none';
+  el('targetStudentsWrap').style.display = t === 'students' ? 'block' : 'none';
+  if (t === 'group') populateGroupSelects();
+  if (t === 'students') {
+    const sts = get('nd_students', []);
+    el('targetStudentsList').innerHTML = sts.length ? sts.map(s => '<label class="check-row"><input type="checkbox" value="' + esc(s.code) + '"/> ' + esc(s.name) + ' <span class="code-badge">' + esc(s.code) + '</span></label>').join('') : '<div class="empty-state">🎓 لا يوجد طلاب</div>';
+  }
 }
 
 function openReport(sid) {
@@ -961,16 +987,16 @@ function openReport(sid) {
   const avg = solved.length ? Math.round(solved.reduce((t, x) => t + x.r.percent, 0) / solved.length) : 0;
   const ordered = unsolved.concat(solved.sort((a, b) => b.r.id - a.r.id));
   let html = '<div style="text-align:center;margin-bottom:10px"><div style="font-size:20px;font-weight:bold;color:#0f3460">♦ Newton Diamond Exams ♦</div></div>';
-  html += '<div class="card"><div class="card-title">🎓 ' + esc(s.name) + ' ' + li.cur.e + '</div><div class="card-meta">🔑 الكود: ' + esc(s.code) + ' | 📚 ' + (SN[s.subject] || '—') + '</div><div class="card-meta">🏅 النقاط: ' + pts + ' | المستوى: ' + li.cur.e + ' ' + li.cur.n + '</div></div>';
+  html += '<div class="card"><div class="card-title">🎓 ' + esc(s.name) + ' ' + li.cur.e + '</div><div class="card-meta"> الكود: ' + esc(s.code) + ' | 📚 ' + (SN[s.subject] || '—') + '</div><div class="card-meta">🏅 النقاط: ' + pts + ' | المستوى: ' + li.cur.e + ' ' + li.cur.n + '</div></div>';
   html += '<div class="orb-grid">' + orbHTML(rows.length,'مُسند','📚',0) + orbHTML(solved.length,'محلول','✅',.4) + orbHTML(unsolved.length,'غير محلول','❌',.8) + orbHTML(avg + '%','المتوسط','📈',1.2) + '</div>';
   html += '<h3>📋 التفاصيل</h3>';
   html += ordered.map(x => {
     const e = x.e, r = x.r;
-    if (r) return '<div class="card"><div class="card-header"><div class="card-title">' + TN[e.type] + ' - ' + esc(e.title) + '</div><span class="status-pill pill-new">✅ محلول</span></div><div class="card-meta"> الدرجة: ' + r.correct + '/' + r.total + ' (' + r.percent + '%)</div><div class="card-meta">📅 ' + r.date + '</div></div>';
+    if (r) return '<div class="card"><div class="card-header"><div class="card-title">' + TN[e.type] + ' - ' + esc(e.title) + '</div><span class="status-pill pill-new">✅ محلول</span></div><div class="card-meta">🎯 الدرجة: ' + r.correct + '/' + r.total + ' (' + r.percent + '%)</div><div class="card-meta">📅 ' + r.date + '</div></div>';
     return '<div class="card"><div class="card-header"><div class="card-title">' + TN[e.type] + ' - ' + esc(e.title) + '</div><span class="status-pill pill-lock">❌ لم يُحل</span></div></div>';
   }).join('') || '<div class="empty-state">لا توجد امتحانات</div>';
   el('reportContent').innerHTML = html;
-  let txt = '♦ Newton Diamond Exams ♦\n📋 تقرير\n\n🎓 ' + s.name + '\n ' + s.code + '\n ' + pts + ' نقطة | ' + li.cur.e + ' ' + li.cur.n + '\n\n📊 مُسند: ' + rows.length + ' | ✅ محلول: ' + solved.length + ' | ❌ غير محلول: ' + unsolved.length + '\n📈 المتوسط: ' + avg + '%\n';
+  let txt = '♦ Newton Diamond Exams ♦\n📋 تقرير\n\n🎓 ' + s.name + '\n🔑 ' + s.code + '\n ' + pts + ' نقطة | ' + li.cur.e + ' ' + li.cur.n + '\n\n📊 مُسند: ' + rows.length + ' | ✅ محلول: ' + solved.length + ' | ❌ غير محلول: ' + unsolved.length + '\n📈 المتوسط: ' + avg + '%\n';
   ordered.forEach((x, i) => {
     const e = x.e, r = x.r;
     txt += (i + 1) + ') ' + e.title + ' → ' + (r ? '✅ ' + r.percent + '%' : '❌ لم يُحل') + '\n';
@@ -980,6 +1006,24 @@ function openReport(sid) {
 }
 function closeReport() { el('reportOverlay').classList.remove('show'); }
 function shareReportWA() { window.open('https://wa.me/?text=' + encodeURIComponent(lastReportText), '_blank'); }
+
+function studentVisible(e, s) {
+  if (!e.published) return false;
+  const t = (e.target && e.target.type) || 'all';
+  if (t === 'all') return true;
+  if (t === 'grade') return !!s.grade && s.grade === e.target.grade;
+  if (t === 'group') return !!s.groupId && s.groupId === e.target.groupId;
+  if (t === 'students') return (e.target.codes || []).indexOf(s.code) >= 0;
+  return true;
+}
+function targetLabel(e) {
+  const t = (e.target && e.target.type) || 'all';
+  if (t === 'all') return '🌍 الجميع';
+  if (t === 'grade') return '🎯 صف';
+  if (t === 'group') return '👥 مجموعة';
+  if (t === 'students') return '🎯 محددون';
+  return '🌍 الجميع';
+}
 
 function isCorrect(q, ua) { return ua === q.correctAnswer; }
 function ansText(q, ua) { return (ua !== null && ua !== undefined && q.options) ? q.options[ua] : 'لم تُجب'; }
@@ -1049,6 +1093,12 @@ function startEditExam(id) {
   editingExamId = id;
   el('contentType').value = e.type; el('subject').value = e.subject; el('grade').value = e.grade;
   el('examTitle').value = e.title; el('examDuration').value = e.duration || 0;
+  el('targetType').value = (e.target && e.target.type) || 'all';
+  updateTargetUI();
+  if (e.target && e.target.type === 'group') el('targetGroup').value = e.target.groupId || '';
+  if (e.target && e.target.type === 'students') {
+    document.querySelectorAll('#targetStudentsList input').forEach(cb => { cb.checked = (e.target.codes || []).indexOf(cb.value) >= 0; });
+  }
   tempQ = JSON.parse(JSON.stringify(e.questions));
   tempQ.forEach(q => { if (!q.level) q.level = 'متوسط'; });
   renderQForm();
@@ -1068,10 +1118,20 @@ function saveExam() {
   const title = el('examTitle').value.trim();
   if (!title) { toast('❌ اكتب العنوان', 1); return; }
   tempQ = tempQ.filter(q => q.question.trim() !== '');
-  if (!tempQ.length) { toast('❌ لا توجد أسئلة', 1); return; }
+  if (!tempQ.length) { toast(' لا توجد أسئلة', 1); return; }
   for (let i = 0; i < tempQ.length; i++) {
     const q = tempQ[i];
     for (let j = 0; j < q.options.length; j++) if (!q.options[j].trim()) { toast('❌ الخيار ' + (j+1) + ' فارغ', 1); return; }
+  }
+  let target = { type: el('targetType').value };
+  if (target.type === 'grade') {
+    target.grade = el('grade').value;
+  } else if (target.type === 'group') {
+    target.groupId = +el('targetGroup').value || '';
+    if (!target.groupId) { toast('❌ اختر المجموعة', 1); return; }
+  } else if (target.type === 'students') {
+    target.codes = Array.from(document.querySelectorAll('#targetStudentsList input:checked')).map(c => c.value);
+    if (!target.codes.length) { toast(' اختر طالب واحد على الأقل', 1); return; }
   }
   const exams = get('nd_exams', []);
   if (editingExamId) {
@@ -1079,13 +1139,25 @@ function saveExam() {
     if (e) {
       e.type = el('contentType').value; e.subject = el('subject').value; e.grade = el('grade').value;
       e.title = title; e.duration = +el('examDuration').value || 0;
+      e.target = target;
       e.questions = JSON.parse(JSON.stringify(tempQ));
       set('nd_exams', exams);
       toast('✅ تم التحديث');
     }
     cancelExamEdit();
   } else {
-    exams.push({ id: Date.now(), type: el('contentType').value, subject: el('subject').value, grade: el('grade').value, title: title, duration: +el('examDuration').value || 0, target: { type: 'all' }, questions: JSON.parse(JSON.stringify(tempQ)), createdAt: new Date().toLocaleString('ar-EG'), published: true });
+    exams.push({ 
+      id: Date.now(), 
+      type: el('contentType').value, 
+      subject: el('subject').value, 
+      grade: el('grade').value, 
+      title: title, 
+      duration: +el('examDuration').value || 0, 
+      target: target,
+      questions: JSON.parse(JSON.stringify(tempQ)), 
+      createdAt: new Date().toLocaleString('ar-EG'), 
+      published: true 
+    });
     set('nd_exams', exams);
     toast('✅ تم الحفظ');
     cancelExamEdit();
@@ -1096,47 +1168,47 @@ function saveExam() {
 function renderHome() {
   const exams = get('nd_exams', []), sts = get('nd_students', []), res = get('nd_results', []), req = get('nd_requests', []).filter(q => q.status === 'pending');
   el('homeStats').innerHTML = '<div class="orb-grid">' +
-    orbHTML(exams.length,'امتحانات','📝',0) +
+    orbHTML(exams.length,'امتحانات','',0) +
     orbHTML(sts.length,'طلاب','🎓',.4) +
-    orbHTML(res.length,'نتائج','📊',.8) +
+    orbHTML(res.length,'نتائج','',.8) +
     orbHTML(req.length,'طلبات','🔓',1.2, req.length > 0) +
     '</div>';
   el('teacherTitleName').textContent = teacherProfile().name;
 }
-function renderTeacher() { renderHome(); renderContent(); renderResultsT(); renderStudentsTab(); renderGroupsTab(); renderStats(); renderRequests(); updateHeaders(); updateCloudBadge(); if (!tempQ.length) addQ(); }
+function renderTeacher() { renderHome(); renderContent(); renderResultsT(); renderStudentsTab(); renderGroupsTab(); renderStats(); renderRequests(); updateHeaders(); updateCloudBadge(); if (!tempQ.length) addQ(); updateTargetUI(); }
 function renderContent() {
   const exams = get('nd_exams', []);
   el('contentCount').textContent = exams.length;
   el('contentList').innerHTML = exams.length ? exams.map(e =>
     '<div class="card"><div class="card-title">' + TN[e.type] + ' - ' + esc(e.title) + '</div>' +
-    '<div class="card-meta">📚 ' + (SN[e.subject] || e.subject) + ' |  ' + (GN[e.grade] || '—') + ' | 📝 ' + e.questions.length + ' سؤال</div>' +
-    '<div class="card-meta">الحالة: ' + (e.published ? '✅ منشور' : '️ مخفي') + '</div>' +
+    '<div class="card-meta">📚 ' + (SN[e.subject] || e.subject) + ' | 🎓 ' + (GN[e.grade] || '—') + ' |  ' + e.questions.length + ' سؤال</div>' +
+    '<div class="card-meta">الاستهداف: ' + targetLabel(e) + ' | الحالة: ' + (e.published ? '✅ منشور' : '⏸️ مخفي') + '</div>' +
     '<div class="card-actions"><button class="btn btn-warning" onclick="togglePub(' + e.id + ')">' + (e.published ? '⏸️ إخفاء' : '📢 نشر') + '</button><button class="btn btn-info" onclick="startEditExam(' + e.id + ')">✏️ تعديل</button><button class="btn btn-primary" onclick="duplicateExam(' + e.id + ')">📑 تكرار</button><button class="btn btn-danger" onclick="delExam(' + e.id + ')">🗑️ حذف</button></div></div>').join('')
     : '<div class="empty-state">📭 لا توجد محتويات</div>';
 }
-function togglePub(id) { const ex = get('nd_exams', []); const e = ex.find(x => x.id === id); if (e) { e.published = !e.published; set('nd_exams', ex); renderContent(); toast(e.published ? '📢 تم النشر' : '️ تم الإخفاء'); } }
-function delExam(id) { ask('حذف؟', () => { set('nd_exams', get('nd_exams', []).filter(e => e.id !== id)); renderContent(); renderHome(); toast('🗑️ تم'); }); }
+function togglePub(id) { const ex = get('nd_exams', []); const e = ex.find(x => x.id === id); if (e) { e.published = !e.published; set('nd_exams', ex); renderContent(); toast(e.published ? '📢 تم النشر' : '⏸️ تم الإخفاء'); } }
+function delExam(id) { ask('حذف؟', () => { set('nd_exams', get('nd_exams', []).filter(e => e.id !== id)); renderContent(); renderHome(); toast('️ تم'); }); }
 function renderResultsT() {
   const r = get('nd_results', []);
-  el('resultsList').innerHTML = r.length ? r.map(x => '<div class="card"><div class="card-title">👨‍ ' + esc(x.studentName || x.studentCode) + '</div><div class="card-meta">' + esc(x.examTitle) + ' | 🎯 ' + x.correct + '/' + x.total + ' (' + x.percent + '%)</div><div class="card-meta">📅 ' + x.date + '</div></div>').join('') : '<div class="empty-state">📊 لا توجد نتائج</div>';
+  el('resultsList').innerHTML = r.length ? r.map(x => '<div class="card"><div class="card-title">👨‍🎓 ' + esc(x.studentName || x.studentCode) + '</div><div class="card-meta">' + esc(x.examTitle) + ' | 🎯 ' + x.correct + '/' + x.total + ' (' + x.percent + '%)</div><div class="card-meta">📅 ' + x.date + '</div></div>').join('') : '<div class="empty-state">📊 لا توجد نتائج</div>';
 }
 function renderStats() {
   const results = get('nd_results', []), students = get('nd_students', []), groups = get('nd_groups', []), exams = get('nd_exams', []);
   const avg = results.length ? Math.round(results.reduce((s, r) => s + r.percent, 0) / results.length) : 0;
   let html = '<div class="card"><div class="card-title">📈 نظرة عامة</div><div class="card-meta">🎓 طلاب: ' + students.length + ' | 👥 مجموعات: ' + groups.length + ' | 📝 امتحانات: ' + exams.length + ' | 📊 نتائج: ' + results.length + ' | 📈 المتوسط: <strong>' + avg + '%</strong></div></div>';
-  html += '<h3>🏆 ترتيب الطلاب</h3>';
+  html += '<h3> ترتيب الطلاب</h3>';
   const rank = students.map(s => {
     const rs = results.filter(r => r.studentCode === s.code);
     const p = studentPoints(s.code);
     return { name: s.name, code: s.code, n: rs.length, p: p, lv: levelInfo(p), a: rs.length ? Math.round(rs.reduce((x, r) => x + r.percent, 0) / rs.length) : 0 };
   }).sort((x, y) => y.p - x.p);
-  html += rank.length ? rank.map((r, i) => '<div class="card"><div class="card-title">' + (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1) + '.') + ' ' + esc(r.name) + ' <span class="code-badge">' + esc(r.code) + '</span> ' + r.lv.cur.e + '</div><div class="card-meta"> ' + r.p + ' نقطة | مستوى ' + r.lv.cur.n + ' | 📈 متوسط ' + r.a + '%</div></div>').join('') : '<div class="empty-state">لا يوجد طلاب</div>';
+  html += rank.length ? rank.map((r, i) => '<div class="card"><div class="card-title">' + (i === 0 ? '' : i === 1 ? '' : i === 2 ? '🥉' : (i+1) + '.') + ' ' + esc(r.name) + ' <span class="code-badge">' + esc(r.code) + '</span> ' + r.lv.cur.e + '</div><div class="card-meta">🏅 ' + r.p + ' نقطة | مستوى ' + r.lv.cur.n + ' | 📈 متوسط ' + r.a + '%</div></div>').join('') : '<div class="empty-state">لا يوجد طلاب</div>';
   el('statsList').innerHTML = html;
 }
 
 function renderStudent() { renderWelcome(); renderStudentExams(); renderStudentResults(); renderStudentStats(); updateHeaders(); updateCloudBadge(); }
 function renderStudentStats() {
-  const exams = get('nd_exams', []).filter(e => e.published);
+  const exams = get('nd_exams', []).filter(e => studentVisible(e, currentUser.rec));
   const mine = get('nd_results', []).filter(r => r.studentCode === currentUser.code);
   const avg = mine.length ? Math.round(mine.reduce((s, r) => s + r.percent, 0) / mine.length) : 0;
   const pts = studentPoints(currentUser.code);
@@ -1148,31 +1220,31 @@ function renderStudentStats() {
     '</div>';
 }
 function renderStudentExams() {
-  const exams = get('nd_exams', []).filter(e => e.published);
+  const exams = get('nd_exams', []).filter(e => studentVisible(e, currentUser.rec));
   el('studentExamsList').innerHTML = exams.length ? exams.map(e => {
     const taken = hasResult(currentUser.code, e.id);
     const al = taken ? retakeAllowance(currentUser.code, e.id) : null;
     const pend = taken ? pendingRequest(currentUser.code, e.id) : null;
     let btn, pill;
-    if (!taken) { btn = '<button class="btn btn-success" onclick="startExam(' + e.id + ')">▶️ ابدأ</button>'; pill = '<span class="status-pill pill-new"> جديد</span>'; }
-    else if (al) { btn = '<button class="btn btn-warning" onclick="startExam(' + e.id + ')"> إعادة</button>'; pill = '<span class="status-pill pill-retake">🔄 متاحة</span>'; }
+    if (!taken) { btn = '<button class="btn btn-success" onclick="startExam(' + e.id + ')">▶️ ابدأ</button>'; pill = '<span class="status-pill pill-new">🆕 جديد</span>'; }
+    else if (al) { btn = '<button class="btn btn-warning" onclick="startExam(' + e.id + ')">🔄 إعادة</button>'; pill = '<span class="status-pill pill-retake">🔄 متاحة</span>'; }
     else if (pend) { btn = requestBtnFor(e.id); pill = '<span class="status-pill pill-retake">⏳ معلق</span>'; }
-    else { btn = '<button class="btn btn-secondary" disabled> تم</button>' + requestBtnFor(e.id); pill = '<span class="status-pill pill-done">✅ تم</span>'; }
-    return '<div class="card"><div class="card-header"><div class="card-title">' + TN[e.type] + ' - ' + esc(e.title) + '</div>' + pill + '</div><div class="card-meta"> ' + (SN[e.subject] || e.subject) + ' | 📝 ' + e.questions.length + ' سؤال</div><div class="card-actions">' + btn + '</div></div>';
-  }).join('') : '<div class="empty-state"> لا توجد امتحانات</div>';
+    else { btn = '<button class="btn btn-secondary" disabled>🔒 تم</button>' + requestBtnFor(e.id); pill = '<span class="status-pill pill-done">✅ تم</span>'; }
+    return '<div class="card"><div class="card-header"><div class="card-title">' + TN[e.type] + ' - ' + esc(e.title) + '</div>' + pill + '</div><div class="card-meta">📚 ' + (SN[e.subject] || e.subject) + ' | 📝 ' + e.questions.length + ' سؤال</div><div class="card-actions">' + btn + '</div></div>';
+  }).join('') : '<div class="empty-state">📭 لا توجد امتحانات</div>';
 }
 function renderStudentResults() {
   const r = get('nd_results', []).filter(x => x.studentCode === currentUser.code);
   const pts = studentPoints(currentUser.code);
   const li = levelInfo(pts);
-  let head = '<div class="card"><div class="card-title">' + li.cur.e + ' مستواك: ' + li.cur.n + ' |  ' + pts + ' نقطة</div>';
+  let head = '<div class="card"><div class="card-title">' + li.cur.e + ' مستواك: ' + li.cur.n + ' | 🏅 ' + pts + ' نقطة</div>';
   if (li.next) {
     const prog = Math.min(100, Math.round((pts - li.cur.min) / (li.next.min - li.cur.min) * 100));
     head += '<div class="card-meta">باقي ' + (li.next.min - pts) + ' نقطة لمستوى ' + li.next.e + ' ' + li.next.n + '</div><div class="progress-bar"><div class="progress-fill" style="width:' + prog + '%"></div></div>';
   } else head += '<div class="card-meta">🎉 أعلى مستوى!</div>';
   head += '</div>';
   el('studentResultsList').innerHTML = head + (r.length ? r.map(x =>
-    '<div class="card"><div class="card-title">' + esc(x.examTitle) + '</div><div class="card-meta">🎯 ' + x.correct + '/' + x.total + ' (' + x.percent + '%) |  ' + x.date + '</div><div class="card-actions">' + requestBtnFor(x.examId) + '</div></div>').join('')
+    '<div class="card"><div class="card-title">' + esc(x.examTitle) + '</div><div class="card-meta"> ' + x.correct + '/' + x.total + ' (' + x.percent + '%) | 📅 ' + x.date + '</div><div class="card-actions">' + requestBtnFor(x.examId) + '</div></div>').join('')
     : '<div class="empty-state">📊 لم تحل شيئاً</div>');
 }
 
@@ -1215,7 +1287,7 @@ function startTimer() {
 function submitExam(force) {
   if (force) { doSubmit(); return; }
   const un = userAnswers.filter(a => a === null || a === '').length;
-  ask(un > 0 ? '⚠️ لم تُجب على ' + un + ' سؤال' : 'تسليم الامتحان؟', doSubmit);
+  ask(un > 0 ? '️ لم تُجب على ' + un + ' سؤال' : 'تسليم الامتحان؟', doSubmit);
 }
 function doSubmit() {
   clearInterval(timerInt);
@@ -1236,7 +1308,7 @@ function doSubmit() {
   el('scoreCircle').style.setProperty('--percent', percent + '%');
   el('scorePercent').textContent = percent + '%';
   el('scoreText').textContent = correct + '/' + total;
-  el('resultMessage').textContent = percent >= 90 ? '🏆 ممتاز!' : percent >= 70 ? '👏 جيد جداً' : percent >= 50 ? '💪 جيد' : ' تحتاج مراجعة';
+  el('resultMessage').textContent = percent >= 90 ? '🏆 ممتاز!' : percent >= 70 ? '👏 جيد جداً' : percent >= 50 ? '💪 جيد' : '📚 تحتاج مراجعة';
   el('resultPoints').textContent = '🏅 كسبت ' + gained + ' نقطة';
   el('reviewContainer').innerHTML = '<h3>📋 المراجعة:</h3>' + html;
   const ptsAfter = ptsBefore + gained;
@@ -1244,7 +1316,7 @@ function doSubmit() {
   const levelUp = lvAfter.n !== lvBefore;
   if (percent >= 85 || levelUp) {
     celebrate();
-    if (levelUp) toast('🎉 ترقية لـ ' + lvAfter.e + ' ' + lvAfter.n + '!');
+    if (levelUp) toast(' ترقية لـ ' + lvAfter.e + ' ' + lvAfter.n + '!');
     else toast('🎉 مبروك!');
   }
   const al = retakeAllowance(currentUser.code, currentExam.id);
